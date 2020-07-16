@@ -23,14 +23,12 @@
  */
 package de.mieslinger.dnscachewarmer;
 
-import static de.mieslinger.dnscachewarmer.Prototype.logger;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Name;
-import org.xbill.DNS.Record;
 import org.xbill.DNS.SimpleResolver;
 import org.xbill.DNS.Type;
 
@@ -72,15 +70,24 @@ public class NSALookup implements Runnable {
     }
 
     private void doLookup(Name n) throws Exception {
-        logger.info("Query A for {}", n);
+        logger.debug("Query A for {}", n);
         Lookup la = new Lookup(n, Type.A, DClass.IN);
         la.setResolver(new SimpleResolver(resolverToWarm));
         la.run();
-        if (la.getResult() == Lookup.SUCCESSFUL) {
-            logger.debug(la.getAnswers()[0].rdataToString());
-        } else {
-            logger.warn("query A for NS {} failed!", n);
+
+        switch (la.getResult()) {
+            case Lookup.SUCCESSFUL:
+                logger.debug(la.getAnswers()[0].rdataToString());
+                break;
+            case Lookup.HOST_NOT_FOUND:
+                logger.debug("HOST_NOT_FOUND A record for {}", n);
+                break;
+            case Lookup.TYPE_NOT_FOUND:
+                logger.debug("TYPE_NOT_FOUND A record for {}", n);
+                break;
+            default:
+                logger.warn("query A for NS {} failed!", n);
+                break;
         }
     }
-
 }

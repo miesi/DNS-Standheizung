@@ -44,7 +44,7 @@ public class Main {
     private static String axfrSource = "iad.xfr.dns.icann.org";
 
     @Argument(alias = "r", description = "Resolver to query")
-    private static String resolverToWarm = "172.19.254.4";
+    private static String resolverToWarm = "10.2.215.21";
 
     @Argument(alias = "nt", description = "Number of Threads for NS lookups")
     private static int numThreadsNSLookup = 5;
@@ -54,10 +54,14 @@ public class Main {
 
     @Argument(alias = "aaaat", description = "Number of Threads for AAAA lookups")
     private static int numThreadsAAAALookup = 25;
-    
+
     //@Argument(alias = "t", description = "resolver timeout (seconds)")
     //private static int timeout = 2;
-    
+    @Argument(alias = "a", description = "retransfer root zone after n seconds")
+    private static int rootZoneMaxAge = 86400;
+
+    @Argument(alias = "rr", description = "run cache warming every n seconds")
+    private static int reRun = 600;
 
     @Argument(alias = "d", description = "enable debug")
     private static boolean debug = false;
@@ -66,49 +70,64 @@ public class Main {
     private static final ConcurrentLinkedQueue<Name> queueALookup = new ConcurrentLinkedQueue<>();
     private static final ConcurrentLinkedQueue<Name> queueAAAALookup = new ConcurrentLinkedQueue<>();
 
+    private static Name lastSeenName = null;
+    private static List records = null;
+    private static Logger logger = LoggerFactory.getLogger(Main.class);
+
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        Logger logger = LoggerFactory.getLogger(Main.class);
 
         List<String> unparsed = Args.parseOrExit(Main.class, args);
 
-        Name lastSeenName = null;
-        List records = null;
-
         setupWorkerThreads();
 
+        transferRootZone();
+
+        while (true) {
+            for (int i = 0; i < records.size(); i++) {
+                Record r = (Record) records.get(i);
+                logger.debug("Delegation: {}", r.getName());
+                if (r.getType() == Type.NS) {
+                    if (!lastSeenName.equals(r.getName())) {
+                        lastSeenName = r.getName();
+                        queueDelegation.add(r);
+                        logger.debug("delegation {} queued", r.getName());
+                    }
+                }
+            }
+            while (queueAAAALookup.size() > 5 || queueDelegation.size() > 5) {
+                try {
+                    logger.info("delegation queue {}, A queue {}, AAAA queue {}", queueDelegation.size(), queueALookup.size(), queueAAAALookup.size());
+                    Thread.sleep(5000);
+                } catch (Exception e) {
+                    logger.warn("sleep interrupted: {}", e.getMessage());
+                }
+            }
+            // sleep reRun time
+            try {
+                logger.info("sleeping {} until next run", reRun);
+                Thread.sleep(reRun * 1000);
+            } catch (Exception e) {
+                logger.warn("reRun sleep was interrupted: {}", e.getMessage());
+            }
+
+            // TODO: check age of root zone and retransfer records
+        }
+    }
+
+    private static void transferRootZone() {
         try {
             ZoneTransferIn xfr = ZoneTransferIn.newAXFR(new Name("."), axfrSource, null);
-            records = xfr.run();
-            lastSeenName = new Name("abrakadabr.cname");
+            xfr.run();
+            records = xfr.getAXFR();
+            lastSeenName = new Name("abrakadabr.test");
         } catch (Exception e) {
             logger.error("AXFR failed: {}, exiting", e.getMessage());
             System.exit(1);
         }
 
-        // get Delegatios from root zone
-        // One Shot implementation
-        for (int i = 0; i < records.size(); i++) {
-            Record r = (Record) records.get(i);
-            logger.debug("Delegation: {}", r.getName());
-            if (r.getType() == Type.NS) {
-                if (!lastSeenName.equals(r.getName())) {
-                    lastSeenName = r.getName();
-                    queueDelegation.add(r);
-                    logger.info("delegation {} queued", r.getName());
-                }
-            }
-        }
-        while (true) {
-            try {
-                Thread.sleep(5000);
-                logger.info("delegation queue {}, A queue {}, AAAA queue {}", queueDelegation.size(), queueALookup.size(), queueAAAALookup.size());
-            } catch (Exception e) {
-                logger.warn("sleep interrupted: {}", e.getMessage());
-            }
-        }
     }
 
     private static void setupWorkerThreads() {

@@ -80,7 +80,7 @@ public class DelegationNSSetLookup implements Runnable {
         Lookup l = new Lookup(delegation.getName(), Type.NS, DClass.IN);
         l.setResolver(new SimpleResolver(resolverToWarm));
         l.run();
-        logger.info("querying NS of {}", delegation.getName());
+        logger.debug("querying NS of {}", delegation.getName());
         if (l.getResult() == Lookup.SUCCESSFUL) {
             // dig A and AAAA for every NS record returned
             Record[] answers = l.getAnswers();

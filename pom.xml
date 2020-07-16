@@ -7,11 +7,6 @@
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
-            <groupId>dnsjava</groupId>
-            <artifactId>dnsjava</artifactId>
-            <version>2.1.9</version>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.28</version>
@@ -25,6 +20,11 @@
             <groupId>com.github.spullara.cli-parser</groupId>
             <artifactId>cli-parser</artifactId>
             <version>1.1.5</version>
+        </dependency>
+        <dependency>
+            <groupId>dnsjava</groupId>
+            <artifactId>dnsjava</artifactId>
+            <version>3.2.2</version>
         </dependency>
     </dependencies>
     <properties>

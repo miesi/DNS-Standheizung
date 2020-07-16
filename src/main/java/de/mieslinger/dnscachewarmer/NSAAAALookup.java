@@ -70,14 +70,24 @@ public class NSAAAALookup implements Runnable {
     }
 
     private void doLookup(Name n) throws Exception {
-        logger.info("Query AAAA for {}", n);
+        logger.debug("Query AAAA for {}", n);
         Lookup la = new Lookup(n, Type.AAAA, DClass.IN);
         la.setResolver(new SimpleResolver(resolverToWarm));
         la.run();
-        if (la.getResult() == Lookup.SUCCESSFUL) {
-            logger.debug(la.getAnswers()[0].rdataToString());
-        } else {
-            logger.warn("query AAAA for NS {} failed!", n);
+
+        switch (la.getResult()) {
+            case Lookup.SUCCESSFUL:
+                logger.debug(la.getAnswers()[0].rdataToString());
+                break;
+            case Lookup.HOST_NOT_FOUND:
+                logger.debug("HOST_NOT_FOUND AAAA record for {}", n);
+                break;
+            case Lookup.TYPE_NOT_FOUND:
+                logger.debug("TYPE_NOT_FOUND AAAA record for {}", n);
+                break;
+            default:
+                logger.warn("query AAAA for NS {} failed!", n);
+                break;
         }
     }
 

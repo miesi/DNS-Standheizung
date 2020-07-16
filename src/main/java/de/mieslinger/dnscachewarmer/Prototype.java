@@ -53,7 +53,7 @@ public class Prototype {
         try {
             // get AXFR of '.'
             ZoneTransferIn xfr = ZoneTransferIn.newAXFR(new Name("."), axfrSource, null);
-            List records = xfr.run();
+            List records = xfr.getAXFR();
             Name lastSeenName = new Name("abrakadabr.cname");
             // get NS Sets per zone
             for (int i = 0; i < records.size(); i++) {
