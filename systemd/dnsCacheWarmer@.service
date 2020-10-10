@@ -1,0 +1,16 @@
+[Unit]
+Description=DNS Cache Warmer for Instance %i
+After=nss-lookup.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+StartLimitInterval=200
+StartLimitBurst=5
+LimitNOFILE=40000
+ExecStart=/usr/bin/java -jar /opt/dnsCacheWarmer/dnsCacheWarmer-1.0-SNAPSHOT-jar-with-dependencies.jar -r %i
+
+[Install]
+WantedBy=multi-user.target
+

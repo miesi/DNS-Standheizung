@@ -42,6 +42,24 @@ Help
 ```
 java -cp target/dnsCacheWarmer-1.0-SNAPSHOT-jar-with-dependencies.jar de.mieslinger.dnscachewarmer.Main --help
 ```
+
+## systemd
+
+copy `systemd/dnsCacheWarmer@.service` to `/etc/systemd/system`
+
+copy `.jar` to `/opt/dnsCacheWarmer`
+
+enable service with
+```
+systemctl enable dnsCacheWarmer@recursor.example.com
+systemctl start dnsCacheWarmer@recursor.example.com
+```
+
+Monitor operations using
+```
+journalctl -u dnsCacheWarmer@recursor.example.com
+```
+
 ## Authors
 
 * **Thomas Mieslinger** 
