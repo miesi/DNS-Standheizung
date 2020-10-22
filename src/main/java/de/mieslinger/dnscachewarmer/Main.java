@@ -124,7 +124,7 @@ public class Main {
             records = xfr.getAXFR();
             lastSeenName = new Name("abrakadabr.test");
         } catch (Exception e) {
-            logger.error("AXFR failed: {}, exiting", e.getMessage());
+            logger.error("AXFR failed: {}, exiting", e.toString());
             System.exit(1);
         }
 

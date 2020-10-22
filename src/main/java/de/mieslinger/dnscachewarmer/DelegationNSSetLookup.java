@@ -26,6 +26,7 @@ package de.mieslinger.dnscachewarmer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xbill.DNS.Cache;
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.NSRecord;
@@ -45,6 +46,7 @@ public class DelegationNSSetLookup implements Runnable {
     private ConcurrentLinkedQueue<Name> queueAAAALookup;
     private ConcurrentLinkedQueue<Name> queueALookup;
     private String resolverToWarm;
+    private Cache c;
     private final Logger logger = LoggerFactory.getLogger(DelegationNSSetLookup.class);
     private boolean keepOnRunning = true;
 
@@ -59,6 +61,8 @@ public class DelegationNSSetLookup implements Runnable {
         this.queueALookup = queueALookup;
         this.queueAAAALookup = queueAAAALookup;
         this.resolverToWarm = resolverToWarm;
+        this.c = new Cache();
+        c.setMaxEntries(0);
     }
 
     public void run() {
@@ -79,6 +83,7 @@ public class DelegationNSSetLookup implements Runnable {
     private void doLookup(Record delegation) throws Exception {
         Lookup l = new Lookup(delegation.getName(), Type.NS, DClass.IN);
         l.setResolver(new SimpleResolver(resolverToWarm));
+        l.setCache(c);
         l.run();
         logger.debug("querying NS of {}", delegation.getName());
         if (l.getResult() == Lookup.SUCCESSFUL) {

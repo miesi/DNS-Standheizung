@@ -26,6 +26,7 @@ package de.mieslinger.dnscachewarmer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xbill.DNS.Cache;
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Name;
@@ -40,6 +41,7 @@ public class NSALookup implements Runnable {
 
     private ConcurrentLinkedQueue<Name> queueALookup;
     private String resolverToWarm;
+    private Cache c;
     private boolean keepOnRunning = true;
     private final Logger logger = LoggerFactory.getLogger(NSALookup.class);
 
@@ -50,6 +52,8 @@ public class NSALookup implements Runnable {
     public NSALookup(ConcurrentLinkedQueue<Name> queueALookup, String resolverToWarm) {
         this.queueALookup = queueALookup;
         this.resolverToWarm = resolverToWarm;
+        this.c = new Cache();
+        c.setMaxEntries(0);
     }
 
     @Override
@@ -72,6 +76,7 @@ public class NSALookup implements Runnable {
     private void doLookup(Name n) throws Exception {
         logger.debug("Query A for {}", n);
         Lookup la = new Lookup(n, Type.A, DClass.IN);
+        la.setCache(c);
         la.setResolver(new SimpleResolver(resolverToWarm));
         la.run();
 
